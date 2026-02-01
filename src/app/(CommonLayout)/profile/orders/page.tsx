@@ -1,110 +1,98 @@
 "use client";
 
-import { Calendar, Search } from "lucide-react";
-import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { apiFetch } from "@/src/lib/api";
+import { RequireAuth } from "@/src/components/shared/require-auth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 
-const orders = [
-    {
-        id: "#ORD-2024-001",
-        date: "2024-01-20",
-        status: "Delivered",
-        total: "$249.99",
-        items: 3,
-        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400",
-        products: ["Wireless Headphones", "Phone Case", "USB Cable"],
-    },
-    // ...add more orders
-];
-
-const getStatusColor = (status: string) => {
-    switch (status) {
-        case "Delivered":
-            return "bg-green-100 text-green-800";
-        case "Processing":
-            return "bg-blue-100 text-blue-800";
-        case "Shipped":
-            return "bg-yellow-100 text-yellow-800";
-        case "Cancelled":
-            return "bg-red-100 text-red-800";
-        default:
-            return "bg-gray-100 text-gray-800";
-    }
+type Order = {
+  id: string;
+  status: string;
+  total: string | number;
+  createdAt: string;
+  items: any;
 };
 
-export default function OrderDetailsPage() {
-    return (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">
-                    Order Details
-                </h1>
-                <p className="text-sm text-gray-600 mt-1">
-                    View and track all your orders
-                </p>
-            </div>
+export default function OrdersPage() {
+  return (
+    <RequireAuth>
+      <OrdersInner />
+    </RequireAuth>
+  );
+}
 
-            <div className="mb-6">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                    <Input
-                        type="text"
-                        placeholder="Search orders..."
-                        className="pl-10"
-                    />
-                </div>
-            </div>
+function OrdersInner() {
+  const [loading, setLoading] = useState(true);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-            <div className="space-y-4">
-                {orders.map((order) => (
-                    <div
-                        key={order.id}
-                        className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                    >
-                        <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-                            <div className="flex items-start space-x-4 flex-1">
-                                <Image
-                                    src={order.image}
-                                    alt="Product"
-                                    width={80}
-                                    height={80}
-                                    className="rounded-md object-cover"
-                                />
-                                <div>
-                                    <div className="flex items-center space-x-2 mb-1">
-                                        <h3 className="font-semibold text-gray-900">
-                                            {order.id}
-                                        </h3>
-                                        <Badge className={getStatusColor(order.status)}>
-                                            {order.status}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex items-center text-sm text-gray-600 space-x-4">
-                                        <div className="flex items-center">
-                                            <Calendar className="w-4 h-4 mr-1" />
-                                            {order.date}
-                                        </div>
-                                        <span>{order.items} items</span>
-                                    </div>
-                                    <div className="mt-2 text-sm text-gray-600">
-                                        {order.products.join(", ")}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="text-right">
-                                <div className="text-lg font-semibold text-gray-900">
-                                    {order.total}
-                                </div>
-                                <Button variant="outline" size="sm" className="mt-2">
-                                    View Details
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    apiFetch<{ success: boolean; data: Order[] }>("/api/v1/orders")
+      .then((res) => mounted && setOrders(res.data || []))
+      .catch((e: any) => mounted && setError(e?.message || "Failed to load orders"))
+      .finally(() => mounted && setLoading(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-zinc-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-end justify-between gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Orders</h1>
+            <p className="text-sm text-gray-600 mt-1">Track your recent purchases.</p>
+          </div>
+          <Link href="/shop"><Button variant="outline">Shop</Button></Link>
         </div>
-    );
+
+        {loading ? (
+          <div className="text-sm text-gray-600">Loading...</div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3">{error}</div>
+        ) : orders.length === 0 ? (
+          <Card>
+            <CardContent className="py-10 text-center">
+              <p className="font-medium text-gray-900">No orders yet</p>
+              <p className="text-sm text-gray-600 mt-1">Place your first order from the shop.</p>
+              <Link href="/shop"><Button className="mt-4">Browse medicines</Button></Link>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid md:grid-cols-2 gap-4">
+            {orders.map((o) => (
+              <Card key={o.id}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center justify-between">
+                    <span>Order #{o.id.slice(-6)}</span>
+                    <span className="text-xs bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-1">
+                      {o.status}
+                    </span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Total</span>
+                    <span className="font-semibold">৳{String(o.total)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Date</span>
+                    <span className="font-medium">{new Date(o.createdAt).toLocaleString()}</span>
+                  </div>
+                  <Link href={`/dashboard/orders/${o.id}`} className="inline-block">
+                    <Button variant="outline" className="mt-2">View details</Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }

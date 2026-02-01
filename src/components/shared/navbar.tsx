@@ -13,16 +13,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useState, useEffect } from "react";
+import { useAuth } from "@/src/providers/auth-provider";
+import { useCart } from "@/src/providers/cart-provider";
+import { useRouter } from "next/navigation";
 
 export default function Navbar() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const router = useRouter();
+    const { user, logout } = useAuth();
+    const { count } = useCart();
 
     const handleLogOut = () => {
-        // logout();
-        // setIsLoading(true);
-        // if (protectedRoutes.some((route) => pathname.match(route))) {
-        //   router.push("/");
-        // }
+        void logout();
+    };
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.push(`/shop${search ? `?search=${encodeURIComponent(search)}` : ""}`);
     };
 
     useEffect(() => {
@@ -88,74 +96,72 @@ export default function Navbar() {
                     {/* Right Section - Actions */}
                     <div className="flex items-center gap-2 md:gap-4">
                         {/* Search Bar - Hidden on mobile */}
-                        <div className="hidden lg:flex items-center bg-gray-100 rounded-full px-4 py-2 gap-2">
+                        <form onSubmit={handleSearch} className="hidden lg:flex items-center bg-gray-100 rounded-full px-4 py-2 gap-2">
                             <Search className="w-4 h-4 text-gray-400" />
                             <input
                                 type="text"
                                 placeholder="Search medicines..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
                                 className="bg-transparent text-sm text-gray-700 placeholder-gray-400 outline-none w-40"
                             />
-                        </div>
+                        </form>
 
                         {/* Icons */}
-                        <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative md:flex hidden">
+                        <Link href="/cart" className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative md:flex hidden">
                             <ShoppingCart className="w-5 h-5 text-gray-700" />
-                            <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                                0
-                            </span>
-                        </button>
+                            {count > 0 && (
+                                <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                                    {count}
+                                </span>
+                            )}
+                        </Link>
 
                         <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative md:flex hidden">
                             <Bell className="w-5 h-5 text-gray-700" />
                             <span className="absolute top-1 right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4"></span>
                         </button>
 
-                        {/* User Dropdown */}
-                        <DropdownMenu>
-                            <DropdownMenuTrigger className="rounded-lg hover:bg-gray-100 transition-colors p-1">
-                                <Avatar>
-                                    <AvatarFallback className="text-base font-bold bg-linear-to-br from-blue-500 to-blue-600 text-white cursor-pointer">
-                                        U
-                                    </AvatarFallback>
-                                </Avatar>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                                <DropdownMenuLabel className="text-base">My Account</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="cursor-pointer">
-                                    <Link href="/profile" className="w-full">Profile</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer">
-                                    <Link href="/profile/orders" className="w-full">Order Details</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer">
-                                    <Link href="/profile/address" className="w-full">Delivery Address</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="cursor-pointer">
-                                    <Link href="/profile/wishlist" className="w-full">Wishlist</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="cursor-pointer focus:bg-blue-50">
-                                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                                    <Link href="/dashboard" className="w-full">Dashboard</Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-600"
-                                    onClick={handleLogOut}
-                                >
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    <Link href="/profile/logout">Log Out</Link>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-
-                        {/* Login Button */}
-                        <Link href="/login" className="hidden md:block">
-                            <Button className="rounded-lg bg-primary hover:bg-blue-700 text-white font-semibold transition-colors">
-                                Login
-                            </Button>
-                        </Link>
+                        {user ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger className="rounded-lg hover:bg-gray-100 transition-colors p-1">
+                                    <Avatar>
+                                        <AvatarFallback className="text-base font-bold bg-linear-to-br from-blue-500 to-blue-600 text-white cursor-pointer">
+                                            {(user.name?.[0] || user.email?.[0] || "U").toUpperCase()}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel className="text-base">{user.name || "My Account"}</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="cursor-pointer">
+                                        <Link href="/profile" className="w-full">Profile</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="cursor-pointer">
+                                        <Link href="/profile/orders" className="w-full">Order Details</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem className="cursor-pointer focus:bg-blue-50">
+                                        <LayoutDashboard className="mr-2 h-4 w-4" />
+                                        <Link href="/dashboard" className="w-full">Dashboard</Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        className="text-red-600 cursor-pointer focus:bg-red-50 focus:text-red-600"
+                                        onClick={handleLogOut}
+                                    >
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        Log Out
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <Link href="/login" className="hidden md:block">
+                                <Button className="rounded-lg bg-primary hover:bg-blue-700 text-white font-semibold transition-colors">
+                                    Login
+                                </Button>
+                            </Link>
+                        )}
                     </div>
                 </div>
 
@@ -184,14 +190,31 @@ export default function Navbar() {
                             >
                                 About Us
                             </Link>
-                            <Link
-                                href="/login"
-                                onClick={() => setIsMobileMenuOpen(false)}
-                            >
-                                <Button className="w-full mt-2 rounded-lg bg-primary hover:bg-blue-700 text-white font-semibold">
-                                    Login
-                                </Button>
-                            </Link>
+                            {user ? (
+                                <>
+                                    <Link href="/cart" className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                        Cart ({count})
+                                    </Link>
+                                    <Link href="/dashboard" className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors" onClick={() => setIsMobileMenuOpen(false)}>
+                                        Dashboard
+                                    </Link>
+                                    <Button
+                                        onClick={() => {
+                                            setIsMobileMenuOpen(false);
+                                            handleLogOut();
+                                        }}
+                                        className="w-full mt-2 rounded-lg bg-red-600 hover:bg-red-700 text-white font-semibold"
+                                    >
+                                        Logout
+                                    </Button>
+                                </>
+                            ) : (
+                                <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                                    <Button className="w-full mt-2 rounded-lg bg-primary hover:bg-blue-700 text-white font-semibold">
+                                        Login
+                                    </Button>
+                                </Link>
+                            )}
                         </nav>
                     </div>
                 )}
