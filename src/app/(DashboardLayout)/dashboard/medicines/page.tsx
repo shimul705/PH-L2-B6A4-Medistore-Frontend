@@ -78,7 +78,12 @@ function MedicinesInner() {
         </div>
         <div className="flex gap-2">
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search..." className="w-56 bg-white" />
-          <Link href="/dashboard/medicines/new"><Button>Add medicine</Button></Link>
+          {user?.role === "SELLER" && (
+            <Link href="/dashboard/medicines/new">
+              <Button>Add Medicine</Button>
+            </Link>
+          )}
+
         </div>
       </div>
 
@@ -91,7 +96,12 @@ function MedicinesInner() {
           <CardContent className="py-10 text-center">
             <p className="font-medium text-gray-900">No medicines found</p>
             <p className="text-sm text-gray-600 mt-1">Add your first product.</p>
-            <Link href="/dashboard/medicines/new"><Button className="mt-4">Add medicine</Button></Link>
+            {user?.role === "SELLER" && (
+              <Link href="/dashboard/medicines/new">
+                <Button>Add Medicine</Button>
+              </Link>
+            )}
+
           </CardContent>
         </Card>
       ) : (
