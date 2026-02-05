@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
 function DashboardShell({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const role = user?.role === "ADMIN" ? "admin" : "user";
+  const role = user?.role === "ADMIN" ? "admin" : user?.role === "SELLER" ? "seller" : "customer";
 
   return (
     <SidebarProvider>
@@ -37,7 +37,7 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
                   <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator />
-                <BreadcrumbItem>{user?.role || "User"}</BreadcrumbItem>
+                <BreadcrumbItem>{user?.role || "CUSTOMER"}</BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>

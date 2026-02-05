@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCart } from "@/src/providers/cart-provider";
 import { useAuth } from "@/src/providers/auth-provider";
+import { useWishlist } from "@/src/providers/wishlist-provider";
+import { Heart } from "lucide-react";
 
 type Category = { id: string; name: string };
 type Medicine = {
@@ -28,6 +30,7 @@ export default function MedicineDetailsPage() {
   const [medicine, setMedicine] = useState<Medicine | null>(null);
   const { add } = useCart();
   const { user } = useAuth();
+  const wishlist = useWishlist();
   const router = useRouter();
 
   useEffect(() => {
@@ -108,6 +111,20 @@ export default function MedicineDetailsPage() {
 
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => router.push("/shop")}>Back</Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    if (!user) {
+                      router.push(`/login?next=${encodeURIComponent(`/shop/${medicine.id}`)}`);
+                      return;
+                    }
+                    if (wishlist.has(medicine.id)) wishlist.remove(medicine.id);
+                    else wishlist.add({ medicineId: medicine.id, name: medicine.name, price: medicine.price, imageUrl: medicine.imageUrl ?? null });
+                  }}
+                  aria-label="Toggle wishlist"
+                >
+                  <Heart className={`w-4 h-4 ${wishlist.has(medicine.id) ? "fill-red-500 text-red-500" : "text-gray-700"}`} />
+                </Button>
                 <Button
                   className="flex-1"
                   disabled={medicine.stock <= 0}

@@ -10,7 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/src/providers/cart-provider";
 import { useAuth } from "@/src/providers/auth-provider";
+import { useWishlist } from "@/src/providers/wishlist-provider";
 import Image from "next/image";
+import { Heart } from "lucide-react";
 
 type Category = { id: string; name: string };
 type Medicine = {
@@ -32,6 +34,7 @@ export default function ShopPage() {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const { add } = useCart();
   const { user } = useAuth();
+  const wishlist = useWishlist();
 
   useEffect(() => {
     let mounted = true;
@@ -135,6 +138,21 @@ export default function ShopPage() {
                   <Link href={`/shop/${m.id}`} className="flex-1">
                     <Button variant="outline" className="w-full">Details</Button>
                   </Link>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      if (!user) {
+                        window.location.href = `/login?next=${encodeURIComponent("/shop")}`;
+                        return;
+                      }
+                      if (wishlist.has(m.id)) wishlist.remove(m.id);
+                      else wishlist.add({ medicineId: m.id, name: m.name, price: m.price, imageUrl: m.imageUrl ?? null });
+                    }}
+                    className="shrink-0"
+                    aria-label="Toggle wishlist"
+                  >
+                    <Heart className={`w-4 h-4 ${wishlist.has(m.id) ? "fill-red-500 text-red-500" : "text-gray-700"}`} />
+                  </Button>
                   <Button
                     className="flex-1"
                     disabled={m.stock <= 0}

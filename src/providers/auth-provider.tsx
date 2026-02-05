@@ -14,7 +14,13 @@ export type AuthUser = {
   role: UserRole;
   isBanned?: boolean;
   emailVerified?: boolean;
+  image?: string | null;
 };
+
+type AuthSession = {
+  user?: AuthUser | null;
+  session?: unknown;
+} | null;
 
 type AuthContextValue = {
   user: AuthUser | null;
@@ -37,10 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await apiFetch<{ success: boolean; data: AuthUser | null }>("/api/v1/auth/me", {
+      // Backend returns Better Auth session payload: { user, session }
+      const res = await apiFetch<{ success: boolean; data: AuthSession }>("/api/v1/auth/me", {
         method: "GET",
       });
-      setUser(res?.data ?? null);
+      setUser(res?.data?.user ?? null);
     } catch {
       setUser(null);
     } finally {
@@ -63,10 +70,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const register = useCallback(
     async (payload: { name: string; email: string; password: string; role: "CUSTOMER" | "SELLER" }) => {
       await apiFetch("/api/v1/auth/register", { method: "POST", json: payload });
-      // After register, backend may auto-login; refresh either way.
-      await refresh();
+      // Requirement: after registering, user must login manually.
+      // Some auth providers may auto-create a session; call logout to ensure no active session.
+      try {
+        await apiFetch("/api/v1/auth/logout", { method: "POST" });
+      } catch {
+        // ignore
+      }
+      setUser(null);
     },
-    [refresh]
+    []
   );
 
   const logout = useCallback(async () => {

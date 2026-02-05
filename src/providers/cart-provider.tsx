@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/src/providers/auth-provider";
 
 export type CartItem = {
   medicineId: string;
@@ -22,27 +23,43 @@ type CartContextValue = {
 
 const CartContext = createContext<CartContextValue | null>(null);
 
-const STORAGE_KEY = "medistore.cart.v1";
+const STORAGE_KEY_PREFIX = "medistore.cart.v1";
+
+const keyForUser = (userId: string) => `${STORAGE_KEY_PREFIX}:${userId}`;
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const { user, isLoading } = useAuth();
 
+  // Load cart for the currently logged-in user.
   useEffect(() => {
+    // While auth is loading, keep current state.
+    if (isLoading) return;
+
+    // No user -> cart should be empty (private cart)
+    if (!user?.id) {
+      setItems([]);
+      return;
+    }
+
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
+      const raw = localStorage.getItem(keyForUser(user.id));
+      setItems(raw ? JSON.parse(raw) : []);
+    } catch {
+      setItems([]);
+    }
+  }, [user?.id, isLoading]);
+
+  // Persist cart per-user
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user?.id) return;
+    try {
+      localStorage.setItem(keyForUser(user.id), JSON.stringify(items));
     } catch {
       // ignore
     }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    } catch {
-      // ignore
-    }
-  }, [items]);
+  }, [items, user?.id, isLoading]);
 
   const add: CartContextValue["add"] = (item, qty = 1) => {
     setItems((prev) => {

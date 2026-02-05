@@ -9,6 +9,7 @@ import {
     Package,
     Tag,
     User,
+    Heart,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,8 +27,8 @@ import Image from 'next/image';
 import { NavMain } from './nav-main';
 import { NavUser } from './nav-user';
 
-// User Navigation Items (Customer/Seller)
-const USER_NAV_ITEMS = [
+// Customer Navigation Items
+const CUSTOMER_NAV_ITEMS = [
     {
         title: 'Dashboard',
         url: '/dashboard',
@@ -43,6 +44,41 @@ const USER_NAV_ITEMS = [
         title: 'Profile',
         url: '/profile',
         icon: Settings,
+    },
+    {
+        title: 'Wishlist',
+        url: '/wishlist',
+        icon: Heart,
+    },
+];
+
+// Seller Navigation Items
+const SELLER_NAV_ITEMS = [
+    {
+        title: 'Dashboard',
+        url: '/dashboard',
+        icon: SquareTerminal,
+        isActive: true,
+    },
+    {
+        title: 'Orders',
+        url: '/dashboard/orders',
+        icon: ShoppingCart,
+    },
+    {
+        title: 'Medicines',
+        url: '/dashboard/medicines',
+        icon: Package,
+    },
+    {
+        title: 'Profile',
+        url: '/profile',
+        icon: Settings,
+    },
+    {
+        title: 'Wishlist',
+        url: '/wishlist',
+        icon: Heart,
     },
 ];
 
@@ -75,7 +111,7 @@ const ADMIN_NAV_ITEMS = [
 
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-    userRole: 'user' | 'admin'; // Role-based prop
+    userRole: 'customer' | 'seller' | 'admin'; // Role-based prop
 }
 
 export function AppSidebar({ userRole, ...props }: AppSidebarProps) {
@@ -87,7 +123,15 @@ export function AppSidebar({ userRole, ...props }: AppSidebarProps) {
 
             <SidebarContent>
                 {/* Main Navigation */}
-                <NavMain items={userRole === 'admin' ? ADMIN_NAV_ITEMS : USER_NAV_ITEMS} />
+                <NavMain
+                    items={
+                        userRole === 'admin'
+                            ? ADMIN_NAV_ITEMS
+                            : userRole === 'seller'
+                                ? SELLER_NAV_ITEMS
+                                : CUSTOMER_NAV_ITEMS
+                    }
+                />
 
                 {/* Common Secondary Navigation */}
                 {/* <div className="mt-4">

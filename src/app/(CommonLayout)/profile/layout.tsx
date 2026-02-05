@@ -17,7 +17,7 @@ const menuItems = [
     { id: "account", href: "/profile", icon: Home, label: "Account Information" },
     { id: "orders", href: "/profile/orders", icon: Package, label: "Order Details" },
     { id: "addresses", href: "/profile/address", icon: MapPin, label: "Delivery Address" },
-    { id: "wishlist", href: "/profile/wishlist", icon: Heart, label: "Wishlist" },
+    { id: "wishlist", href: "/wishlist", icon: Heart, label: "Wishlist" },
     { id: "logout", href: "/profile/logout", icon: LogOut, label: "Logout" },
 ];
 

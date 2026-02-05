@@ -28,7 +28,8 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       await register({ name, email, password, role });
-      router.push(next);
+      // After registering, redirect to login (user must login manually)
+      router.push(`/login?next=${encodeURIComponent(next)}`);
     } catch (err: any) {
       setError(err?.message || "Registration failed");
     } finally {
