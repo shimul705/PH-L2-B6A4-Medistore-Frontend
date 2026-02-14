@@ -42,12 +42,17 @@ const CUSTOMER_NAV_ITEMS = [
     },
     {
         title: 'Profile',
-        url: '/profile',
+        url: '/dashboard/profile',
         icon: Settings,
     },
     {
+        title: 'Delivery Address',
+        url: '/dashboard/address',
+        icon: Package,
+    },
+    {
         title: 'Wishlist',
-        url: '/wishlist',
+        url: '/dashboard/wishlist',
         icon: Heart,
     },
 ];
@@ -72,12 +77,12 @@ const SELLER_NAV_ITEMS = [
     },
     {
         title: 'Profile',
-        url: '/profile',
+        url: '/dashboard/profile',
         icon: Settings,
     },
     {
         title: 'Wishlist',
-        url: '/wishlist',
+        url: '/dashboard/wishlist',
         icon: Heart,
     },
 ];
@@ -103,7 +108,7 @@ const ADMIN_NAV_ITEMS = [
     },
     {
         title: 'Profile',
-        url: '/profile',
+        url: '/dashboard/profile',
         icon: Settings,
     },
 ];

@@ -90,16 +90,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } finally {
       setUser(null);
       // if user is on protected routes, bring them home
-      if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/checkout") || pathname?.startsWith("/profile")) {
+      if (pathname?.startsWith("/dashboard") || pathname?.startsWith("/checkout")) {
         router.push("/");
       }
     }
   }, [pathname, router]);
 
   const loginWithGoogle = useCallback(() => {
-    const callbackURL = `${env.appUrl}/auth/callback`;
-    // Backend route you set up; this should redirect to Google then back to backend, then to callbackURL.
-    window.location.href = `${env.apiBaseUrl}/api/v1/auth/google?callbackURL=${encodeURIComponent(callbackURL)}`;
+    // better-auth returns a JSON payload like { url, redirect: true }.
+    // We must fetch it then navigate to the returned URL.
+    // IMPORTANT: pass callbackURL so after consent the user is redirected back
+    // to the Next.js app instead of the backend root.
+    const start = async () => {
+      const callbackURL = `${window.location.origin}/auth/callback`;
+      const res = await fetch(
+        `${env.apiBaseUrl}/api/v1/auth/google?callbackURL=${encodeURIComponent(callbackURL)}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: { Accept: "application/json" },
+        }
+      );
+      const data = await res.json().catch(() => null);
+      const url = data?.url;
+      if (url) window.location.href = url;
+      else window.location.href = `${env.apiBaseUrl}/api/v1/auth/google?callbackURL=${encodeURIComponent(callbackURL)}`;
+    };
+    void start();
   }, []);
 
   const value = useMemo<AuthContextValue>(

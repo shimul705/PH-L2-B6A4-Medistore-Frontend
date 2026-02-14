@@ -40,18 +40,42 @@ export default function DashboardOrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const canUpdate = user?.role === "SELLER" || user?.role === "ADMIN";
+  const isSeller = user?.role === "SELLER";
+  const isAdmin = user?.role === "ADMIN";
+  const isCustomer = user?.role === "CUSTOMER";
 
   const updateStatus = async (id: string, status: string) => {
     setSaving(id);
     try {
-      await apiFetch(`/api/v1/orders/${id}/status`, { method: "PATCH", json: { status } });
+      await apiFetch(`/api/v1/orders/${id}`, { method: "PATCH", json: { status } });
       load();
     } catch (e: any) {
       setError(e?.message || "Failed to update status");
     } finally {
       setSaving(null);
     }
+  };
+
+  const customerCancel = async (id: string) => {
+    setSaving(id);
+    setError(null);
+    try {
+      await apiFetch(`/api/v1/orders/${id}/cancel`, { method: "PATCH" });
+      load();
+    } catch (e: any) {
+      setError(e?.message || "Failed to cancel order");
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const sellerConfirm = (id: string) => updateStatus(id, "PROCESSING");
+  const sellerReject = (id: string) => updateStatus(id, "CANCELLED");
+
+  const sellerNextOptions = (current: string) => {
+    if (current === "PROCESSING") return ["PROCESSING", "SHIPPED"];
+    if (current === "SHIPPED") return ["SHIPPED", "DELIVERED"];
+    return [current];
   };
 
   return (
@@ -105,7 +129,51 @@ export default function DashboardOrdersPage() {
                   <Link href={`/dashboard/orders/${o.id}`} className="flex-1">
                     <Button variant="outline" className="w-full">Details</Button>
                   </Link>
-                  {canUpdate && (
+                  {isCustomer && (
+                    <Button
+                      className="flex-1"
+                      variant={o.status === "PLACED" ? "destructive" : "outline"}
+                      disabled={saving === o.id || o.status !== "PLACED"}
+                      onClick={() => customerCancel(o.id)}
+                    >
+                      {o.status === "PLACED" ? "Cancel" : "Cancelled"}
+                    </Button>
+                  )}
+
+                  {isSeller && o.status === "PLACED" && (
+                    <div className="flex-1 flex gap-2">
+                      <Button
+                        className="flex-1"
+                        disabled={saving === o.id}
+                        onClick={() => sellerConfirm(o.id)}
+                      >
+                        Confirm
+                      </Button>
+                      <Button
+                        className="flex-1"
+                        variant="destructive"
+                        disabled={saving === o.id}
+                        onClick={() => sellerReject(o.id)}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+
+                  {isSeller && o.status !== "PLACED" && (
+                    <select
+                      className="flex-1 border rounded-md px-2 py-2 text-sm bg-white"
+                      value={o.status}
+                      disabled={saving === o.id || o.status === "CANCELLED" || o.status === "DELIVERED"}
+                      onChange={(e) => updateStatus(o.id, e.target.value)}
+                    >
+                      {sellerNextOptions(o.status).map((s) => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  )}
+
+                  {isAdmin && (
                     <select
                       className="flex-1 border rounded-md px-2 py-2 text-sm bg-white"
                       value={o.status}

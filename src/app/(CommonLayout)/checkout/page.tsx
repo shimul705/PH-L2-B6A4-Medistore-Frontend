@@ -1,14 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { apiFetch } from "@/src/lib/api";
 import { RequireAuth } from "@/src/components/shared/require-auth";
 import { useCart } from "@/src/providers/cart-provider";
+
+type Address = {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  state?: string;
+  zip?: string;
+  isDefault?: boolean;
+};
 
 export default function CheckoutPage() {
   return (
@@ -24,24 +34,32 @@ function CheckoutInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [shippingName, setShippingName] = useState("");
-  const [shippingPhone, setShippingPhone] = useState("");
-  const [shippingAddress, setShippingAddress] = useState("");
-  const [shippingCity, setShippingCity] = useState("");
-  const [shippingArea, setShippingArea] = useState("");
+  const [address, setAddress] = useState<Address | null>(null);
   const [notes, setNotes] = useState("");
+  const [loadingAddress, setLoadingAddress] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoadingAddress(true);
+    apiFetch<{ success: boolean; data: Address | null }>("/api/v1/addresses/default")
+      .then((res) => mounted && setAddress(res.data || null))
+      .catch(() => mounted && setAddress(null))
+      .finally(() => mounted && setLoadingAddress(false));
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const payload = useMemo(() => {
     return {
-      shippingName,
-      shippingPhone,
-      shippingAddress,
-      shippingCity,
-      shippingArea: shippingArea || undefined,
+      shippingName: address?.name || "",
+      shippingPhone: address?.phone || "",
+      shippingAddress: address?.address || "",
+      shippingCity: address?.city || "",
       notes: notes || undefined,
       items: items.map((i) => ({ medicineId: i.medicineId, quantity: i.quantity })),
     };
-  }, [shippingName, shippingPhone, shippingAddress, shippingCity, shippingArea, notes, items]);
+  }, [address, notes, items]);
 
   const placeOrder = async () => {
     setError(null);
@@ -49,15 +67,15 @@ function CheckoutInner() {
       setError("Your cart is empty.");
       return;
     }
-    if (!shippingName || !shippingPhone || !shippingAddress || !shippingCity) {
-      setError("Please fill in required shipping fields.");
+    if (!address) {
+      setError("Please set a default delivery address before checkout.");
       return;
     }
     setLoading(true);
     try {
       await apiFetch("/api/v1/orders", { method: "POST", json: payload });
       clear();
-      router.push("/profile/orders");
+      router.push("/dashboard/orders");
     } catch (err: any) {
       setError(err?.message || "Failed to place order");
     } finally {
@@ -82,36 +100,40 @@ function CheckoutInner() {
         <div className="grid lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle>Delivery information</CardTitle>
+              <CardTitle>Delivery address</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>Full name *</Label>
-                  <Input value={shippingName} onChange={(e) => setShippingName(e.target.value)} />
+              {loadingAddress ? (
+                <p className="text-sm text-gray-600">Loading your default address...</p>
+              ) : !address ? (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg p-4">
+                  <p className="font-medium">No default address selected.</p>
+                  <p className="mt-1">Go to <Link className="underline font-semibold" href="/dashboard/address">Delivery Address</Link> and set one as default to continue checkout.</p>
                 </div>
-                <div className="space-y-1">
-                  <Label>Phone *</Label>
-                  <Input value={shippingPhone} onChange={(e) => setShippingPhone(e.target.value)} />
+              ) : (
+                <div className="rounded-xl border bg-white p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold text-gray-900">{address.name}</p>
+                      <p className="text-sm text-gray-700">{address.phone}</p>
+                      <p className="text-sm text-gray-700 mt-2">{address.address}</p>
+                      <p className="text-sm text-gray-700">{address.city}</p>
+                    </div>
+                    <Link href="/dashboard/address">
+                      <Button variant="outline">Change</Button>
+                    </Link>
+                  </div>
                 </div>
-              </div>
-              <div className="space-y-1">
-                <Label>Address *</Label>
-                <Input value={shippingAddress} onChange={(e) => setShippingAddress(e.target.value)} />
-              </div>
-              <div className="grid md:grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label>City *</Label>
-                  <Input value={shippingCity} onChange={(e) => setShippingCity(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                  <Label>Area</Label>
-                  <Input value={shippingArea} onChange={(e) => setShippingArea(e.target.value)} />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label>Notes</Label>
-                <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Optional" />
+              )}
+
+              <div className="rounded-xl border bg-white p-4">
+                <p className="text-sm font-semibold text-gray-900 mb-2">Order notes (optional)</p>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className="w-full min-h-[90px] rounded-lg border border-gray-200 bg-white p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
+                  placeholder="Any delivery notes..."
+                />
               </div>
             </CardContent>
           </Card>
@@ -138,7 +160,7 @@ function CheckoutInner() {
                 <span className="font-semibold">Total</span>
                 <span className="font-semibold">৳{subtotal}</span>
               </div>
-              <Button disabled={loading} className="w-full mt-2" onClick={placeOrder}>
+              <Button disabled={loading || loadingAddress || !address} className="w-full mt-2" onClick={placeOrder}>
                 {loading ? "Placing order..." : "Place order"}
               </Button>
               <p className="text-xs text-gray-500">Payment: Cash on delivery (demo).</p>

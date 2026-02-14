@@ -39,7 +39,7 @@ function UsersInner() {
   const toggleBan = async (id: string, isBanned: boolean) => {
     setSaving(id);
     try {
-      await apiFetch(`/api/v1/admin/users/${id}/ban`, { method: "PATCH", json: { isBanned } });
+      await apiFetch(`/api/v1/admin/users/${id}`, { method: "PATCH", json: { isBanned } });
       load();
     } catch (e: any) {
       setError(e?.message || "Failed to update user");

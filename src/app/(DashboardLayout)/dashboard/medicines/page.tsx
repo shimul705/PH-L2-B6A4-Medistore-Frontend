@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 type Medicine = {
   id: string;
   name: string;
+  imageUrl?: string | null;
   price: number;
   stock: number;
   isActive: boolean;
@@ -110,7 +111,17 @@ function MedicinesInner() {
             <Card key={m.id}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center justify-between">
-                  <span>{m.name}</span>
+                  <span className="flex items-center gap-3">
+                    <span className="relative h-9 w-9 rounded-md border bg-white overflow-hidden">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={m.imageUrl || "https://placehold.co/100x100?text=M"}
+                        alt={m.name}
+                        className="h-full w-full object-contain p-1"
+                      />
+                    </span>
+                    <span>{m.name}</span>
+                  </span>
                   <span className={`text-xs px-2 py-1 rounded-full border ${m.isActive ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-gray-50 text-gray-600 border-gray-200"}`}>
                     {m.isActive ? "Active" : "Inactive"}
                   </span>

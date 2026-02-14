@@ -41,8 +41,8 @@ export const Footer = () => {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/contact" className="text-gray-400 hover:text-blue-400 transition">
-                                    Contact
+                                <Link href="/dashboard" className="text-gray-400 hover:text-blue-400 transition">
+                                    Dashboard
                                 </Link>
                             </li>
                         </ul>
@@ -53,29 +53,24 @@ export const Footer = () => {
                         <h4 className="text-lg font-semibold text-white mb-4">Customer Service</h4>
                         <ul className="space-y-2">
                             <li>
-                                <Link href="#" className="text-gray-400 hover:text-blue-400 transition">
+                                <Link href="/dashboard/orders" className="text-gray-400 hover:text-blue-400 transition">
                                     Track Orders
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-gray-400 hover:text-blue-400 transition">
-                                    FAQs
+                                <Link href="/shop" className="text-gray-400 hover:text-blue-400 transition">
+                                    Browse medicines
                                 </Link>
                             </li>
                             <li>
-                                <Link href="#" className="text-gray-400 hover:text-blue-400 transition">
-                                    Returns
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-gray-400 hover:text-blue-400 transition">
-                                    Support
+                                <Link href="/login" className="text-gray-400 hover:text-blue-400 transition">
+                                    Login
                                 </Link>
                             </li>
                         </ul>
                     </div>
 
-                    {/* Seller & Admin */}
+                    {/* For Sellers */}
                     <div>
                         <h4 className="text-lg font-semibold text-white mb-4">For Sellers</h4>
                         <ul className="space-y-2">
@@ -85,18 +80,8 @@ export const Footer = () => {
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/seller/dashboard" className="text-gray-400 hover:text-blue-400 transition">
+                                <Link href="/dashboard" className="text-gray-400 hover:text-blue-400 transition">
                                     Seller Dashboard
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-gray-400 hover:text-blue-400 transition">
-                                    Seller Guidelines
-                                </Link>
-                            </li>
-                            <li>
-                                <Link href="#" className="text-gray-400 hover:text-blue-400 transition">
-                                    Partner with Us
                                 </Link>
                             </li>
                         </ul>
@@ -111,21 +96,21 @@ export const Footer = () => {
                             <span className="text-2xl">📞</span>
                             <div>
                                 <p className="text-sm text-gray-400">24/7 Customer Support</p>
-                                <p className="text-white font-semibold">+1-800-MEDICINE</p>
+                                <p className="text-white font-semibold">+8801779951119</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <span className="text-2xl">📧</span>
                             <div>
                                 <p className="text-sm text-gray-400">Email Us</p>
-                                <p className="text-white font-semibold">support@medistore.com</p>
+                                <p className="text-white font-semibold">shimuldev705@gmail.com</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <span className="text-2xl">📍</span>
                             <div>
                                 <p className="text-sm text-gray-400">Headquarters</p>
-                                <p className="text-white font-semibold">123 Medical St, Healthcare City</p>
+                                <p className="text-white font-semibold">Dhaka, Bangladesh</p>
                             </div>
                         </div>
                     </div>
@@ -136,14 +121,11 @@ export const Footer = () => {
                             &copy; 2026 MediStore. All rights reserved.
                         </div>
                         <div className="flex gap-6 text-sm">
-                            <Link href="#" className="text-gray-400 hover:text-blue-400 transition">
-                                Privacy Policy
+                            <Link href="/about" className="text-gray-400 hover:text-blue-400 transition">
+                                About
                             </Link>
-                            <Link href="#" className="text-gray-400 hover:text-blue-400 transition">
-                                Terms of Service
-                            </Link>
-                            <Link href="#" className="text-gray-400 hover:text-blue-400 transition">
-                                Cookie Policy
+                            <Link href="/shop" className="text-gray-400 hover:text-blue-400 transition">
+                                Shop
                             </Link>
                         </div>
                     </div>

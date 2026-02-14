@@ -39,9 +39,11 @@ export default function ShopPage() {
   useEffect(() => {
     let mounted = true;
     setLoading(true);
-    apiFetch<{ success: boolean; data: Medicine[] }>(
-      `/api/v1/medicines${initialSearch ? `?search=${encodeURIComponent(initialSearch)}` : ""}`
-    )
+    // NOTE:
+    // Backend `?search=` does not reliably match category names.
+    // For category navigation from homepage we need client-side filtering,
+    // so we always load the full medicines list here.
+    apiFetch<{ success: boolean; data: Medicine[] }>(`/api/v1/medicines`)
       .then((res) => {
         if (mounted) setMedicines(res.data || []);
       })

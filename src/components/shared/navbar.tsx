@@ -135,10 +135,10 @@ export default function Navbar() {
                                     <DropdownMenuLabel className="text-base">{user.name || "My Account"}</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem className="cursor-pointer">
-                                        <Link href="/profile" className="w-full">Profile</Link>
+                                        <Link href="/dashboard/profile" className="w-full">Profile</Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuItem className="cursor-pointer">
-                                        <Link href="/profile/orders" className="w-full">Order Details</Link>
+                                        <Link href="/dashboard/orders" className="w-full">Order Details</Link>
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem className="cursor-pointer focus:bg-blue-50">

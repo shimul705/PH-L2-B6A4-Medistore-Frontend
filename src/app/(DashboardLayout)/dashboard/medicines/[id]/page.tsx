@@ -68,7 +68,7 @@ function EditMedicineInner() {
     setSaving(true);
     try {
       await apiFetch(`/api/v1/medicines/${id}`, {
-        method: "PATCH",
+        method: "PUT",
         json: {
           name: m.name,
           description: m.description || undefined,

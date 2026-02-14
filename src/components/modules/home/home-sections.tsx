@@ -18,6 +18,27 @@ type Medicine = {
   category?: Category;
 };
 
+type OrderReview = {
+  id: string;
+  text: string;
+  createdAt: string;
+  customer?: { name?: string | null; image?: string | null };
+  order?: { id: string; status: string };
+};
+
+type MedicineReview = {
+  id: string;
+  rating: number;
+  comment?: string | null;
+  createdAt: string;
+  customer?: { name?: string | null; image?: string | null };
+  medicine?: { id: string; name: string; imageUrl?: string | null };
+};
+
+type HomeReviewFeedItem =
+  | { kind: "order"; createdAt: string; customerName: string; text: string }
+  | { kind: "medicine"; createdAt: string; customerName: string; text: string; rating: number; medicineName: string };
+
 const SectionTitle = ({ title, subtitle }: { title: string; subtitle?: string }) => (
   <div className="flex items-end justify-between gap-4 mb-5">
     <div>
@@ -31,6 +52,9 @@ export function HomeSections() {
   const [loading, setLoading] = useState(true);
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [orderReviews, setOrderReviews] = useState<OrderReview[]>([]);
+  const [medicineReviews, setMedicineReviews] = useState<MedicineReview[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -56,6 +80,52 @@ export function HomeSections() {
       mounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    setReviewsLoading(true);
+    Promise.all([
+      apiFetch<{ success: boolean; data: OrderReview[] }>("/api/v1/order-reviews?limit=6"),
+      apiFetch<{ success: boolean; data: MedicineReview[] }>("/api/v1/reviews/latest?limit=6"),
+    ])
+      .then(([o, m]) => {
+        if (!mounted) return;
+        setOrderReviews(o?.data || []);
+        setMedicineReviews(m?.data || []);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setOrderReviews([]);
+        setMedicineReviews([]);
+      })
+      .finally(() => mounted && setReviewsLoading(false));
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const reviewFeed = useMemo<HomeReviewFeedItem[]>(() => {
+    const o = orderReviews.map((r) => ({
+      kind: "order" as const,
+      createdAt: r.createdAt,
+      customerName: r.customer?.name || "Customer",
+      text: r.text,
+    }));
+    const m = medicineReviews.map((r) => ({
+      kind: "medicine" as const,
+      createdAt: r.createdAt,
+      customerName: r.customer?.name || "Customer",
+      rating: Number(r.rating || 0),
+      medicineName: r.medicine?.name || "Medicine",
+      text: r.comment?.trim() || `Rated ${r.rating}/5 for ${r.medicine?.name || "a medicine"}.`,
+    }));
+
+    return [...o, ...m]
+      .filter((x) => Boolean(x.createdAt))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 6);
+  }, [orderReviews, medicineReviews]);
 
   const lowStock = useMemo(() => {
     // last 5 low stock medicines (in stock, sorted by smallest stock)
@@ -207,37 +277,54 @@ export function HomeSections() {
         <section className="mt-12">
           <SectionTitle title="Customer reviews" subtitle="What people say about MediStore." />
 
-          <div className="grid md:grid-cols-3 gap-4">
-            {[
-              {
-                name: "Ayesha Rahman",
-                quote: "Delivery was fast and the medicines were well packaged. Highly recommended!",
-                stars: 5,
-              },
-              {
-                name: "Mizanur Hasan",
-                quote: "Easy ordering experience and good prices compared to local shops.",
-                stars: 5,
-              },
-              {
-                name: "Nusrat Jahan",
-                quote: "Great customer support and authentic products. Will order again.",
-                stars: 4,
-              },
-            ].map((r) => (
-              <Card key={r.name} className="h-full">
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-1 text-yellow-500">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <span key={i}>{i < r.stars ? "★" : "☆"}</span>
-                    ))}
-                  </div>
-                  <p className="text-gray-700 mt-3">“{r.quote}”</p>
-                  <p className="text-sm text-gray-600 mt-4 font-semibold">— {r.name}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {reviewsLoading ? (
+            <div className="grid md:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Card key={i} className="h-full">
+                  <CardContent className="p-6 space-y-3">
+                    <Skeleton className="h-4 w-1/3" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : reviewFeed.length === 0 ? (
+            <Card>
+              <CardContent className="py-8 text-center text-sm text-gray-600">
+                No reviews yet. Place an order and share your experience!
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid md:grid-cols-3 gap-4">
+              {reviewFeed.slice(0, 3).map((r, idx) => (
+                <Card key={`${r.kind}-${idx}`} className="h-full">
+                  <CardContent className="p-6">
+                    <div className="flex items-center justify-between">
+                      {r.kind === "medicine" ? (
+                        <div className="flex items-center gap-1 text-yellow-500">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <span key={i}>{i < r.rating ? "★" : "☆"}</span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-zinc-100 text-zinc-700">
+                          Order review
+                        </span>
+                      )}
+                      <span className="text-xs text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    {r.kind === "medicine" && (
+                      <p className="text-xs text-gray-600 mt-2">Medicine: <span className="font-semibold text-gray-900">{r.medicineName}</span></p>
+                    )}
+                    <p className="text-gray-700 mt-3">“{r.text}”</p>
+                    <p className="text-sm text-gray-600 mt-4 font-semibold">— {r.customerName}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </div>

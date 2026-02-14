@@ -44,7 +44,7 @@ export default function DashboardHome() {
             <span className="text-gray-600">Email</span>
             <span className="font-medium">{user?.email}</span>
           </div>
-          <Link href="/profile"><Button variant="outline" className="w-full mt-2">Profile</Button></Link>
+          <Link href="/dashboard/profile"><Button variant="outline" className="w-full mt-2">Profile</Button></Link>
         </CardContent>
       </Card>
     </div>
