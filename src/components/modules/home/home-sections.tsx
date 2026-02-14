@@ -18,14 +18,6 @@ type Medicine = {
   category?: Category;
 };
 
-type OrderReview = {
-  id: string;
-  text: string;
-  createdAt: string;
-  customer?: { name?: string | null; image?: string | null };
-  order?: { id: string; status: string };
-};
-
 type MedicineReview = {
   id: string;
   rating: number;
@@ -35,9 +27,7 @@ type MedicineReview = {
   medicine?: { id: string; name: string; imageUrl?: string | null };
 };
 
-type HomeReviewFeedItem =
-  | { kind: "order"; createdAt: string; customerName: string; text: string }
-  | { kind: "medicine"; createdAt: string; customerName: string; text: string; rating: number; medicineName: string };
+type HomeReviewFeedItem = { createdAt: string; customerName: string; text: string; rating: number; medicineName: string };
 
 const SectionTitle = ({ title, subtitle }: { title: string; subtitle?: string }) => (
   <div className="flex items-end justify-between gap-4 mb-5">
@@ -53,7 +43,6 @@ export function HomeSections() {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
-  const [orderReviews, setOrderReviews] = useState<OrderReview[]>([]);
   const [medicineReviews, setMedicineReviews] = useState<MedicineReview[]>([]);
 
   useEffect(() => {
@@ -84,18 +73,13 @@ export function HomeSections() {
   useEffect(() => {
     let mounted = true;
     setReviewsLoading(true);
-    Promise.all([
-      apiFetch<{ success: boolean; data: OrderReview[] }>("/api/v1/order-reviews?limit=6"),
-      apiFetch<{ success: boolean; data: MedicineReview[] }>("/api/v1/reviews/latest?limit=6"),
-    ])
-      .then(([o, m]) => {
+    apiFetch<{ success: boolean; data: MedicineReview[] }>("/api/v1/reviews/feed?limit=6")
+      .then((m) => {
         if (!mounted) return;
-        setOrderReviews(o?.data || []);
         setMedicineReviews(m?.data || []);
       })
       .catch(() => {
         if (!mounted) return;
-        setOrderReviews([]);
         setMedicineReviews([]);
       })
       .finally(() => mounted && setReviewsLoading(false));
@@ -106,26 +90,18 @@ export function HomeSections() {
   }, []);
 
   const reviewFeed = useMemo<HomeReviewFeedItem[]>(() => {
-    const o = orderReviews.map((r) => ({
-      kind: "order" as const,
-      createdAt: r.createdAt,
-      customerName: r.customer?.name || "Customer",
-      text: r.text,
-    }));
-    const m = medicineReviews.map((r) => ({
-      kind: "medicine" as const,
-      createdAt: r.createdAt,
-      customerName: r.customer?.name || "Customer",
-      rating: Number(r.rating || 0),
-      medicineName: r.medicine?.name || "Medicine",
-      text: r.comment?.trim() || `Rated ${r.rating}/5 for ${r.medicine?.name || "a medicine"}.`,
-    }));
-
-    return [...o, ...m]
+    return medicineReviews
+      .map((r) => ({
+        createdAt: r.createdAt,
+        customerName: r.customer?.name || "Customer",
+        rating: Number(r.rating || 0),
+        medicineName: r.medicine?.name || "Medicine",
+        text: r.comment?.trim() || `Rated ${r.rating}/5 for ${r.medicine?.name || "a medicine"}.`,
+      }))
       .filter((x) => Boolean(x.createdAt))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 6);
-  }, [orderReviews, medicineReviews]);
+  }, [medicineReviews]);
 
   const lowStock = useMemo(() => {
     // last 5 low stock medicines (in stock, sorted by smallest stock)
@@ -299,25 +275,17 @@ export function HomeSections() {
           ) : (
             <div className="grid md:grid-cols-3 gap-4">
               {reviewFeed.slice(0, 3).map((r, idx) => (
-                <Card key={`${r.kind}-${idx}`} className="h-full">
+                <Card key={`${r.medicineName}-${idx}`} className="h-full">
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between">
-                      {r.kind === "medicine" ? (
-                        <div className="flex items-center gap-1 text-yellow-500">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <span key={i}>{i < r.rating ? "★" : "☆"}</span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-xs font-semibold px-2 py-1 rounded-full bg-zinc-100 text-zinc-700">
-                          Order review
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1 text-yellow-500">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <span key={i}>{i < r.rating ? "★" : "☆"}</span>
+                        ))}
+                      </div>
                       <span className="text-xs text-gray-500">{new Date(r.createdAt).toLocaleDateString()}</span>
                     </div>
-                    {r.kind === "medicine" && (
-                      <p className="text-xs text-gray-600 mt-2">Medicine: <span className="font-semibold text-gray-900">{r.medicineName}</span></p>
-                    )}
+                    <p className="text-xs text-gray-600 mt-2">Medicine: <span className="font-semibold text-gray-900">{r.medicineName}</span></p>
                     <p className="text-gray-700 mt-3">“{r.text}”</p>
                     <p className="text-sm text-gray-600 mt-4 font-semibold">— {r.customerName}</p>
                   </CardContent>

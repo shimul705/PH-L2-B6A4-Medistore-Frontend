@@ -20,7 +20,8 @@ type StoredOrderItem = {
 
 type OrderReview = {
   id: string;
-  text: string;
+  rating: number;
+  comment?: string | null;
   createdAt: string;
 };
 
@@ -49,6 +50,7 @@ export default function OrderDetailsPage() {
 
   const [review, setReview] = useState<OrderReview | null>(null);
   const [reviewText, setReviewText] = useState("");
+  const [reviewRating, setReviewRating] = useState<number>(5);
   const [savingReview, setSavingReview] = useState(false);
   const [savingCancel, setSavingCancel] = useState(false);
 
@@ -67,18 +69,13 @@ export default function OrderDetailsPage() {
   useEffect(() => {
     if (!user || user.role !== "CUSTOMER") return;
     if (!order) return;
-    // Only load review when it can exist
+    // We create reviews per medicine via /reviews/order/:orderId.
+    // There isn't a single "order review" to fetch, so we just reset UI when status changes.
     if (!(order.status === "DELIVERED" || order.status === "CANCELLED")) {
       setReview(null);
-      return;
+      setReviewText("");
+      setReviewRating(5);
     }
-    let mounted = true;
-    apiFetch<{ success: boolean; data: OrderReview | null }>(`/api/v1/order-reviews/order/${order.id}`)
-      .then((res) => mounted && setReview(res.data || null))
-      .catch(() => mounted && setReview(null));
-    return () => {
-      mounted = false;
-    };
   }, [order, user]);
 
   const items = useMemo<StoredOrderItem[]>(() => {
@@ -130,17 +127,18 @@ export default function OrderDetailsPage() {
     }
     setSavingReview(true);
     try {
-      const prefix = order.status === "DELIVERED" ? "I received my order, " : "My order is canceled, ";
-      const text = `${prefix}${reviewText.trim()}`;
-      const created = await apiFetch<{ success: boolean; data: OrderReview }>(
-        `/api/v1/order-reviews/order/${order.id}`,
+      const created = await apiFetch<{ success: boolean; data: OrderReview[] }>(
+        `/api/v1/reviews/order/${order.id}`,
         {
           method: "POST",
-          json: { text },
+          json: { rating: reviewRating, comment: reviewText.trim() },
         }
       );
-      setReview(created.data);
+      // Backend creates a review per medicine in the order.
+      // We show a simple confirmation by storing the first created review (if any).
+      setReview(created.data?.[0] || null);
       setReviewText("");
+      setReviewRating(5);
     } catch (e: any) {
       setError(e?.message || "Failed to submit review");
     } finally {
@@ -210,6 +208,7 @@ export default function OrderDetailsPage() {
                                 <p className="font-medium text-gray-900 leading-tight">
                                   {it.name || "Medicine"}
                                 </p>
+
                                 <p className="text-xs text-gray-500 font-mono">{it.medicineId}</p>
                               </div>
                             </div>
@@ -273,7 +272,19 @@ export default function OrderDetailsPage() {
             ) : review ? (
               <div className="rounded-lg border p-4 bg-white">
                 <p className="text-sm text-gray-900 font-medium">Your review</p>
-                <p className="text-sm text-gray-700 mt-1">{review.text}</p>
+                <div className="mt-2 flex items-center gap-1">
+                  {Array.from({ length: 5 }).map((_, idx) => {
+                    const n = idx + 1;
+                    const active = n <= (review.rating || 0);
+                    return (
+                      <span key={n} className={active ? "text-yellow-500" : "text-gray-300"}>
+                        ★
+                      </span>
+                    );
+                  })}
+                  <span className="text-xs text-gray-600 ml-2">({review.rating}/5)</span>
+                </div>
+                <p className="text-sm text-gray-700 mt-2">{review.comment || "—"}</p>
                 <p className="text-xs text-gray-500 mt-2">Submitted: {new Date(review.createdAt).toLocaleString()}</p>
               </div>
             ) : (
@@ -289,6 +300,30 @@ export default function OrderDetailsPage() {
                   className="w-full min-h-[90px] rounded-lg border border-gray-200 bg-white p-3 text-sm outline-none focus:ring-2 focus:ring-black/10"
                   placeholder="Your review..."
                 />
+
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-gray-700">Rating:</p>
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, idx) => {
+                      const n = idx + 1;
+                      const active = n <= reviewRating;
+                      return (
+                        <button
+                          key={n}
+                          type="button"
+                          onClick={() => setReviewRating(n)}
+                          className={
+                            "text-lg leading-none " +
+                            (active ? "text-yellow-500" : "text-gray-300")
+                          }
+                          aria-label={`Rate ${n} star`}
+                        >
+                          ★
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
                 <Button disabled={savingReview} onClick={onSubmitReview}>
                   {savingReview ? "Submitting..." : "Submit review"}
                 </Button>
