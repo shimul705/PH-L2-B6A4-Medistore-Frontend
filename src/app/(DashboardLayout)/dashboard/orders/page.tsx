@@ -116,6 +116,7 @@ export default function DashboardOrdersPage() {
                 )}
               </CardHeader>
               <CardContent className="space-y-2">
+
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Total</span>
                   <span className="font-semibold">৳{String(o.total)}</span>
@@ -136,7 +137,7 @@ export default function DashboardOrdersPage() {
                       disabled={saving === o.id || o.status !== "PLACED"}
                       onClick={() => customerCancel(o.id)}
                     >
-                      {o.status === "PLACED" ? "Cancel" : "Cancelled"}
+                      {o.status === "PLACED" ? "Cancel" : `${o.status}`}
                     </Button>
                   )}
 
